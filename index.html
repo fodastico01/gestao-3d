@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#11151c">
+<meta name="description" content="Gestão da impressão 3D: custo real, estoque, vendas e lucro">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Gestão 3D</title>
+<style>
+:root{
+  --bg:#0f1319; --bg2:#161b23; --card:#1b212b; --card2:#232a36; --line:#2c3442;
+  --tx:#e9edf3; --tx2:#9aa5b5; --tx3:#6b7687;
+  --ac:#3fb68b; --ac2:#2a8f6b; --warn:#f0b43c; --bad:#ef5b5b; --info:#5b9cf0;
+  --r:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:14px 16px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+header h1{font-size:20px;margin:0;flex:1}
+header .back{background:none;border:0;color:var(--tx);font-size:26px;padding:0 6px 0 0;line-height:1}
+main{padding:14px 14px 20px;max-width:640px;margin:0 auto}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:6;background:var(--bg2);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--tx3);padding:9px 0 8px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button svg{width:24px;height:24px}
+nav button.on{color:var(--ac)}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font-size:15px;color:var(--tx2);font-weight:600}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi{background:var(--card);border-radius:var(--r);padding:12px}
+.kpi .l{font-size:12.5px;color:var(--tx2)}
+.kpi .v{font-size:21px;font-weight:700;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--tx3);margin-top:2px}
+.kpi.big{grid-column:span 2}
+.kpi.big .v{font-size:28px}
+.pos{color:var(--ac)} .neg{color:var(--bad)} .mut{color:var(--tx2)} .sm{font-size:13px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:0}
+.row .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px 16px;font-size:16px;font-weight:600;background:var(--ac);color:#06140e;text-align:center}
+.btn:active{filter:brightness(.9)}
+.btn.sec{background:var(--card2);color:var(--tx)}
+.btn.danger{background:var(--bad);color:#fff}
+.btn.sm{padding:9px 12px;font-size:14px;width:auto;display:inline-block}
+.btns{display:flex;gap:10px;margin-bottom:12px}
+.btns .btn{flex:1}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--card);color:var(--tx2);border-radius:999px;padding:8px 13px;font-size:14px}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#06140e;font-weight:600}
+label{display:block;font-size:13.5px;color:var(--tx2);margin:12px 0 5px}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:12px;font-size:16px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--ac2);border-color:transparent}
+textarea{min-height:70px;resize:vertical}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f2 label,.f3 label{margin-top:8px}
+.f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sec-t{margin:20px 0 4px;font-size:14px;font-weight:700;color:var(--ac);text-transform:uppercase;letter-spacing:.04em}
+.hint{font-size:12.5px;color:var(--tx3);margin-top:4px}
+.tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--card2);color:var(--tx2);margin-right:4px}
+.tag.bad{background:#4a1d1f;color:#ffb3b3}
+.tag.warn{background:#4a3a14;color:#ffd98a}
+.tag.ok{background:#173a2d;color:#8fe3c0}
+.alert{border-left:4px solid var(--warn);background:#2a2516;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:14px}
+.alert.bad{border-color:var(--bad);background:#2c1819}
+.alert.info{border-color:var(--info);background:#16212f}
+.pcard{background:var(--card);border-radius:var(--r);padding:13px;margin-bottom:10px}
+.pcard .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.pcard .nm{font-weight:700;font-size:16px}
+.pcard .meta{font-size:12.5px;color:var(--tx3);margin-top:2px}
+.ch4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.ch4 div{background:var(--bg2);border-radius:8px;padding:6px;font-size:12px;text-align:center}
+.ch4 b{display:block;font-size:13px}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl td,.tbl th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:right}
+.tbl td:first-child,.tbl th:first-child{text-align:left}
+.tbl th{color:var(--tx3);font-weight:600;font-size:12px}
+.bar{height:8px;background:var(--bg2);border-radius:99px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ac)}
+.empty{text-align:center;color:var(--tx3);padding:26px 10px}
+#modal{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center}
+#modal.on{display:flex}
+.sheet{background:var(--bg2);width:100%;max-width:640px;max-height:94vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column}
+.sh-head{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line);font-size:17px}
+.sh-head b{flex:1}
+.sh-head .x{background:none;border:0;color:var(--tx2);font-size:22px}
+.sh-body{padding:4px 16px 18px;overflow-y:auto;flex:1}
+.sh-foot{display:flex;gap:10px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.sh-foot .btn{flex:1}
+.prev{background:var(--card);border-radius:12px;padding:12px;margin-top:16px}
+.item-row{display:grid;grid-template-columns:1fr 62px 92px 36px;gap:6px;margin-top:6px;align-items:center}
+.item-row input,.item-row select{padding:10px 8px;font-size:15px}
+.xbtn{background:var(--card2);border:0;color:var(--tx2);border-radius:8px;height:42px;font-size:16px}
+.seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;color:var(--tx2);padding:10px;border-radius:8px;font-size:14.5px}
+.seg button.on{background:var(--card2);color:var(--tx);font-weight:600}
+.menu .row{padding:15px 2px;font-size:16px}
+.menu .row:after{content:"›";color:var(--tx3);font-size:22px}
+#toast{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);background:#e9edf3;color:#111;padding:11px 18px;border-radius:999px;font-size:14.5px;z-index:30;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+#toast.on{opacity:1}
+.chk{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:15px;color:var(--tx)}
+.chk input{width:22px;height:22px;flex:none}
+.sw{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+</style>
+</head>
+<body>
+<header><button class="back" id="back" style="display:none" onclick="A.voltar()">‹</button><h1 id="titulo">Gestão 3D</h1></header>
+<main id="main"></main>
+<nav id="nav">
+  <button data-t="painel" onclick="A.tab('painel')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Painel</button>
+  <button data-t="produtos" onclick="A.tab('produtos')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg>Produtos</button>
+  <button data-t="estoque" onclick="A.tab('estoque')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18v12H3zM3 9l2-5h14l2 5M9 13h6"/></svg>Estoque</button>
+  <button data-t="vendas" onclick="A.tab('vendas')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20.5" r="1.3"/><circle cx="17" cy="20.5" r="1.3"/></svg>Vendas</button>
+  <button data-t="mais" onclick="A.tab('mais')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>Mais</button>
+</nav>
+<div id="modal" onclick="if(event.target===this)A.fechar()"></div>
+<div id="toast"></div>
+<input type="file" id="arqImport" accept=".json,application/json" style="display:none" onchange="A.importarArquivo(this)">
+
+<script>
+'use strict';
+/* ===================== DADOS ===================== */
+const KEY = 'gestao3d_v1';
+const CANAIS = {shopee:'Shopee', tiktok:'TikTok Shop', ml:'Mercado Livre', direta:'Venda direta', b2b:'Venda B2B'};
+const CANAIS_PRECO = ['shopee','tiktok','ml','direta'];
+const CANAL_CURTO = {shopee:'Shopee', tiktok:'TikTok', ml:'M. Livre', direta:'Direta', b2b:'B2B'};
+const CANAL_COR = {shopee:'#ee4d2d', tiktok:'#25f4ee', ml:'#ffe600', direta:'#3fb68b', b2b:'#a78bfa'};
+const PLATAFORMAS_ADS = ['Shopee Ads','TikTok Ads','Meta','Google','Outro'];
+const ORIGENS = {proprio:'Próprio', makerworld:'MakerWorld', comprado:'Comprado', designer:'Designer contratado'};
+const LICENCAS = {sim:'Sim', nao:'Não', nao_sei:'Não sei'};
+const MOTIVOS = ['Perda','Quebra','Uso próprio','Brinde','Contagem de estoque','Outro'];
+const DEF_CFG = {
+  preco_filamento_kg:100, tarifa_kwh:0.9, consumo_watts:100, preco_impressora:3970,
+  vida_util_horas:5000, num_impressoras:1, perda_falhas:10, embalagem_padrao:2,
+  taxas:{shopee:{pct:20,fixo:0}, tiktok:{pct:12,fixo:0}, ml:{pct:14,fixo:0}, direta:{pct:0,fixo:0}, b2b:{pct:0,fixo:0}},
+  margem_alvo:40, alerta_filamento_g:150, usar_preco_rolo:false, ratear_cpa:false
+};
+const clone = o => JSON.parse(JSON.stringify(o));
+function novoEstado(){
+  return {versao_schema:1, config:clone(DEF_CFG), produtos:[], estoque:{}, movimentos:[], vendas:[], anuncios:[], filamentos:[], ultimo_backup:null};
+}
+function migrar(d){
+  const n = novoEstado();
+  if(!d || typeof d !== 'object') return n;
+  Object.assign(n, d);
+  n.config = Object.assign(clone(DEF_CFG), d.config || {});
+  n.config.taxas = Object.assign(clone(DEF_CFG.taxas), (d.config || {}).taxas || {});
+  ['produtos','movimentos','vendas','anuncios','filamentos'].forEach(k => { if(!Array.isArray(n[k])) n[k] = []; });
+  if(!n.estoque || typeof n.estoque !== 'object') n.estoque = {};
+  n.versao_schema = 1;
+  return n;
+}
+let S;
+function carregar(){
+  try{ const r = localStorage.getItem(KEY); S = r ? migrar(JSON.parse(r)) : novoEstado(); }
+  catch(e){ S = novoEstado(); }
+}
+function salvar(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); return true; }
+  catch(e){ toast('Erro ao salvar no aparelho'); return false; }
+}
+
+/* ===================== UTIL ===================== */
+const fmtBRL = new Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'});
+const R = v => fmtBRL.format(isFinite(v) ? v : 0);
+const N = (v, d=2) => (isFinite(v) ? v : 0).toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
+const P = v => isFinite(v) ? N(v*100, 1) + '%' : '—';
+const cls = v => v >= 0 ? 'pos' : 'neg';
+function num(s){
+  if(typeof s === 'number') return isFinite(s) ? s : 0;
+  s = String(s ?? '').replace(/[R$\s%]/g, '');
+  if(!s) return 0;
+  if(s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const v = parseFloat(s);
+  return isFinite(v) ? v : 0;
+}
+const int = s => Math.round(num(s));
+const vIn = v => (v === '' || v == null) ? '' : String(Math.round(v*10000)/10000).replace('.', ',');
+function iso(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+const hoje = () => iso(new Date());
+function dBR(s){ if(!s) return '—'; const [y,m,d] = s.slice(0,10).split('-'); return `${d}/${m}/${y}`; }
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function hm(h){ const t = Math.round((h||0)*60); return Math.floor(t/60) + 'h' + String(t%60).padStart(2,'0'); }
+const $ = id => document.getElementById(id);
+const val = id => $(id) ? $(id).value : '';
+function diasEntre(a, b){ return Math.round((new Date(b+'T12:00') - new Date(a+'T12:00')) / 864e5) + 1; }
+let toastT;
+function toast(t){ const e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => e.classList.remove('on'), 2300); }
+const prod = id => S.produtos.find(p => p.id === id);
+const nomeProd = id => { const p = prod(id); return p ? p.nome : '(produto excluído)'; };
+
+/* ===================== CÁLCULOS ===================== */
+function precoKg(p){
+  const c = S.config;
+  if(c.usar_preco_rolo && p && p.filamento_id){
+    const f = S.filamentos.find(x => x.id === p.filamento_id);
+    if(f && f.peso_inicial_g > 0 && f.preco_pago > 0) return f.preco_pago / f.peso_inicial_g * 1000;
+  }
+  return c.preco_filamento_kg;
+}
+const embalagemDe = p => (p.embalagem === '' || p.embalagem == null) ? S.config.embalagem_padrao : num(p.embalagem);
+function custo(p, prof=0){
+  const c = S.config;
+  if(p.tipo === 'kit'){
+    let comp = 0, horas = 0, gramas = 0;
+    if(prof < 5) (p.componentes || []).forEach(k => {
+      const q = prod(k.produto_id);
+      if(q){ const cq = custo(q, prof+1); comp += cq.producao * k.qtd; horas += cq.horas * k.qtd; gramas += cq.gramas * k.qtd; }
+    });
+    const comprados = (p.itens_comprados || []).reduce((a,i) => a + num(i.custo), 0);
+    const extras = num(p.custos_extras), emb = embalagemDe(p);
+    return {kit:true, componentes:comp, comprados, extras, embalagem:emb, total:comp+comprados+extras+emb, producao:comp+comprados+extras, horas, gramas};
+  }
+  const g = num(p.gramas), h = num(p.horas);
+  const material = g * precoKg(p) / 1000;
+  const energia = h * c.consumo_watts / 1000 * c.tarifa_kwh;
+  const maquina = h * (c.vida_util_horas > 0 ? c.preco_impressora / c.vida_util_horas : 0);
+  const sub = material + energia + maquina, perda = sub * c.perda_falhas / 100;
+  const extras = num(p.custos_extras), emb = embalagemDe(p);
+  return {material, energia, maquina, perda, extras, embalagem:emb, total:sub+perda+extras+emb, producao:sub+perda+extras, horas:h, gramas:g};
+}
+function cpaRecente(){
+  const ini = iso(new Date(Date.now() - 29*864e5)), fim = hoje();
+  const gasto = S.anuncios.filter(a => a.data >= ini && a.data <= fim).reduce((s,a) => s + a.valor, 0);
+  const pecas = S.vendas.filter(v => v.data >= ini && v.data <= fim).reduce((s,v) => s + v.itens.reduce((x,i) => x + i.qtd, 0), 0);
+  return pecas > 0 ? gasto / pecas : 0;
+}
+function precoCanal(p, canal){ const pr = p.precos || {}; return num(canal === 'b2b' ? pr.direta : pr[canal]); }
+function lucroCanal(p, canal, cu){
+  const t = S.config.taxas[canal] || {pct:0, fixo:0};
+  const preco = precoCanal(p, canal), frete = num((p.frete_vendedor || {})[canal]);
+  const taxa = preco > 0 ? preco * t.pct / 100 + t.fixo : 0;
+  const cpa = S.config.ratear_cpa ? cpaRecente() : 0;
+  const lucro = preco - taxa - frete - cu.total - cpa;
+  const den = 1 - t.pct/100 - S.config.margem_alvo/100;
+  return {preco, taxa, frete, cpa, lucro, margem: preco > 0 ? lucro/preco : NaN,
+          lph: cu.horas > 0 ? lucro/cu.horas : NaN,
+          minimo: den > 0 ? (cu.total + t.fixo + frete + cpa) / den : NaN};
+}
+function disponivelKit(p){
+  const comps = p.componentes || [];
+  if(!comps.length) return 0;
+  return Math.max(0, Math.min(...comps.map(k => Math.floor((S.estoque[k.produto_id] || 0) / (k.qtd || 1)))));
+}
+const qtdEstoque = p => p.tipo === 'kit' ? disponivelKit(p) : (S.estoque[p.id] || 0);
+
+/* ===================== PERÍODO ===================== */
+const UI = {tab:'painel', sub:null, per:{tipo:'mes', ini:'', fim:''}, busca:'', inativos:false, canalVendas:'', movLimite:30};
+function periodo(){
+  const t = UI.per.tipo, d = new Date();
+  if(t === 'mes') return {ini: iso(new Date(d.getFullYear(), d.getMonth(), 1)), fim: hoje(), nome:'Este mês'};
+  if(t === 'mesant') return {ini: iso(new Date(d.getFullYear(), d.getMonth()-1, 1)), fim: iso(new Date(d.getFullYear(), d.getMonth(), 0)), nome:'Mês anterior'};
+  if(t === '30d') return {ini: iso(new Date(Date.now() - 29*864e5)), fim: hoje(), nome:'Últimos 30 dias'};
+  const ini = UI.per.ini || iso(new Date(d.getFullYear(), d.getMonth(), 1)), fim = UI.per.fim || hoje();
+  return ini <= fim ? {ini, fim, nome:'Personalizado'} : {ini:fim, fim:ini, nome:'Personalizado'};
+}
+function perHTML(){
+  const ops = [['mes','Este mês'],['mesant','Mês anterior'],['30d','Últimos 30 dias'],['custom','Personalizado']];
+  const p = periodo();
+  let h = '<div class="chips">' + ops.map(([k,n]) => `<button class="chip ${UI.per.tipo===k?'on':''}" onclick="A.setPer('${k}')">${n}</button>`).join('') + '</div>';
+  if(UI.per.tipo === 'custom') h += `<div class="f2" style="margin-bottom:10px"><div><label>De</label><input type="date" value="${p.ini}" onchange="A.setPerData('ini',this.value)"></div><div><label>Até</label><input type="date" value="${p.fim}" onchange="A.setPerData('fim',this.value)"></div></div>`;
+  else h += `<div class="hint" style="margin:-4px 0 10px">${dBR(p.ini)} a ${dBR(p.fim)}</div>`;
+  return h;
+}
+const noPer = (x, p) => x.data >= p.ini && x.data <= p.fim;
+function faturamentoVenda(v){ return v.itens.reduce((s,i) => s + i.qtd*i.preco_unit, 0) - (v.desconto || 0); }
+
+/* ===================== MODAL ===================== */
+function modal(titulo, corpo, rodape){
+  const m = $('modal');
+  const jaAberto = m.classList.contains('on');
+  m.innerHTML = `<div class="sheet"><div class="sh-head"><b>${titulo}</b><button class="x" onclick="A.fechar()" aria-label="Fechar">✕</button></div><div class="sh-body">${corpo}</div>${rodape ? `<div class="sh-foot">${rodape}</div>` : ''}</div>`;
+  m.classList.add('on');
+  if(!jaAberto && !A._reuso){ try{ history.pushState({m:1}, ''); }catch(e){} }
+}
+function confirmar(texto, cb, botao='Excluir', estilo='danger'){
+  A._cb = cb;
+  modal('Confirmar', `<p style="font-size:16px;margin:14px 0">${texto}</p>`,
+    `<button class="btn sec" onclick="A.fechar()">Cancelar</button><button class="btn ${estilo}" onclick="A._ok()">${botao}</button>`);
+}
+window.addEventListener('popstate', () => { if($('modal').classList.contains('on')) A.fechar(true); });
+
+/* ===================== VIEWS ===================== */
+const TITULOS = {painel:'Painel', produtos:'Produtos', estoque:'Estoque', vendas:'Vendas', mais:'Mais',
+  anuncios:'Anúncios', filamentos:'Filamentos', config:'Configurações', backup:'Exportar / Importar'};
+function render(){
+  const v = UI.sub || UI.tab;
+  $('titulo').textContent = TITULOS[v];
+  $('back').style.display = UI.sub ? 'block' : 'none';
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.t === UI.tab));
+  $('main').innerHTML = VIEWS[v]();
+  if(v === 'produtos') A.filtrarProdutos();
+}
+const VIEWS = {};
+
+/* ---------- PAINEL ---------- */
+VIEWS.painel = function(){
+  const p = periodo();
+  const vendas = S.vendas.filter(v => noPer(v, p));
+  const ads = S.anuncios.filter(a => noPer(a, p));
+  const fat = vendas.reduce((s,v) => s + faturamentoVenda(v), 0);
+  const lucroVendas = vendas.reduce((s,v) => s + v.lucro, 0);
+  const gastoAds = ads.reduce((s,a) => s + a.valor, 0);
+  const lucro = lucroVendas - gastoAds;
+  const pecas = vendas.reduce((s,v) => s + v.itens.reduce((x,i) => x + i.qtd, 0), 0);
+  const horas = S.movimentos.filter(m => m.tipo === 'producao' && noPer(m, p)).reduce((s,m) => s + (m.horas_total || 0), 0);
+  const cap = diasEntre(p.ini, p.fim) * 24 * Math.max(1, S.config.num_impressoras);
+  let h = perHTML();
+
+  // alertas
+  const alertas = [];
+  if(S.produtos.length || S.vendas.length){
+    if(!S.ultimo_backup) alertas.push(`<div class="alert info" onclick="A.sub('backup')">Você ainda não fez backup dos dados. Toque aqui para exportar.</div>`);
+    else if(diasEntre(S.ultimo_backup, hoje()) > 8) alertas.push(`<div class="alert info" onclick="A.sub('backup')">Último backup em ${dBR(S.ultimo_backup)} (mais de 7 dias). Toque para exportar.</div>`);
+  }
+  if(!S.produtos.length){
+    h += `<div class="card"><h3>Primeiros passos</h3><div class="sm mut">1. Confira os valores em <b>Mais › Configurações</b> (filamento, energia, taxas).<br>2. Cadastre seus produtos em <b>Produtos</b> com gramas e tempo do Bambu Studio.<br>3. Registre a produção em <b>Estoque</b> e as vendas em <b>Vendas</b>.</div><div style="margin-top:12px"><button class="btn" onclick="A.tab('produtos');A.novoProduto('produto')">Cadastrar primeiro produto</button></div></div>`;
+  }
+  h += alertas.join('');
+
+  h += `<div class="grid2">
+    <div class="kpi big"><div class="l">Lucro líquido</div><div class="v ${cls(lucro)}">${R(lucro)}</div><div class="s">Já descontando taxas, frete, custo de produção e anúncios</div></div>
+    <div class="kpi"><div class="l">Faturamento</div><div class="v">${R(fat)}</div></div>
+    <div class="kpi"><div class="l">Margem líquida</div><div class="v ${cls(lucro)}">${fat > 0 ? P(lucro/fat) : '—'}</div></div>
+    <div class="kpi"><div class="l">Vendas</div><div class="v">${vendas.length}</div><div class="s">${pecas} peça${pecas===1?'':'s'}</div></div>
+    <div class="kpi"><div class="l">Ticket médio</div><div class="v">${vendas.length ? R(fat/vendas.length) : '—'}</div></div>
+    <div class="kpi"><div class="l">Anúncios</div><div class="v">${R(gastoAds)}</div><div class="s">CPA ${vendas.length && gastoAds ? R(gastoAds/vendas.length) : '—'}</div></div>
+    <div class="kpi"><div class="l">Uso da impressora</div><div class="v">${hm(horas)}</div><div class="s">de ${N(cap,0)} h (${P(cap ? horas/cap : 0)})</div><div class="bar"><i style="width:${Math.min(100, cap ? horas/cap*100 : 0)}%"></i></div></div>
+  </div>`;
+
+  // top 5 produtos
+  const porProd = {};
+  vendas.forEach(v => v.itens.forEach(i => {
+    const o = porProd[i.produto_id] = porProd[i.produto_id] || {lucro:0, qtd:0};
+    o.lucro += i.lucro || 0; o.qtd += i.qtd;
+  }));
+  const top = Object.entries(porProd).sort((a,b) => b[1].lucro - a[1].lucro).slice(0,5);
+  h += `<div class="card"><h3>Top 5 produtos por lucro</h3>` + (top.length ? top.map(([id,o],k) =>
+    `<div class="row"><span class="n">${k+1}. ${esc(nomeProd(id))} <span class="mut sm">· ${o.qtd} un.</span></span><b class="${cls(o.lucro)}">${R(o.lucro)}</b></div>`).join('') : '<div class="mut sm">Nenhuma venda no período.</div>') + '</div>';
+
+  // por canal
+  const porCanal = {};
+  vendas.forEach(v => { const o = porCanal[v.canal] = porCanal[v.canal] || {lucro:0, fat:0, n:0}; o.lucro += v.lucro; o.fat += faturamentoVenda(v); o.n++; });
+  h += `<div class="card"><h3>Lucro por canal</h3>` + (Object.keys(porCanal).length ? Object.keys(CANAIS).filter(c => porCanal[c]).map(c =>
+    `<div class="row"><span class="n"><span class="sw" style="background:${CANAL_COR[c]}"></span>${CANAIS[c]} <span class="mut sm">· ${porCanal[c].n} venda${porCanal[c].n===1?'':'s'} · ${R(porCanal[c].fat)}</span></span><b class="${cls(porCanal[c].lucro)}">${R(porCanal[c].lucro)}</b></div>`).join('') : '<div class="mut sm">Nenhuma venda no período.</div>') + '</div>';
+
+  // estoque baixo
+  const baixos = S.produtos.filter(x => x.ativo !== false && x.tipo !== 'kit' && (x.estoque_minimo || 0) > 0 && (S.estoque[x.id] || 0) < x.estoque_minimo);
+  h += `<div class="card"><h3>Estoque baixo</h3>` + (baixos.length ? baixos.map(x =>
+    `<div class="row"><span class="n">${esc(x.nome)}</span><span class="neg"><b>${S.estoque[x.id] || 0}</b> <span class="mut sm">/ mín. ${x.estoque_minimo}</span></span></div>`).join('') : '<div class="mut sm">Tudo certo.</div>') + '</div>';
+
+  // filamentos
+  const lim = S.config.alerta_filamento_g;
+  const fil = S.filamentos.filter(f => f.gramas_restantes < lim);
+  h += `<div class="card"><h3>Filamento acabando</h3>` + (fil.length ? fil.map(f =>
+    `<div class="row"><span class="n">${esc(f.material)} ${esc(f.cor)} <span class="mut sm">${esc(f.marca)}</span></span><b class="neg">${N(f.gramas_restantes,0)} g</b></div>`).join('') : `<div class="mut sm">${S.filamentos.length ? 'Nenhum rolo abaixo de ' + lim + ' g.' : 'Cadastre seus rolos em Mais › Filamentos.'}</div>`) + '</div>';
+  return h;
+};
+
+/* ---------- PRODUTOS ---------- */
+VIEWS.produtos = function(){
+  return `<div class="btns"><button class="btn" onclick="A.novoProduto('produto')">+ Nova peça</button><button class="btn sec" onclick="A.novoProduto('kit')">+ Novo kit</button></div>
+  <input type="search" placeholder="Buscar por nome, código ou categoria" value="${esc(UI.busca)}" oninput="UI.busca=this.value;A.filtrarProdutos()">
+  <label class="chk" style="margin:10px 0 12px"><input type="checkbox" ${UI.inativos?'checked':''} onchange="UI.inativos=this.checked;A.filtrarProdutos()"> Mostrar inativos</label>
+  <div id="listaProd"></div>`;
+};
+function cardProduto(p){
+  const cu = custo(p);
+  const lucros = CANAIS_PRECO.map(c => [c, lucroCanal(p, c, cu)]);
+  const melhor = lucros.filter(([,l]) => l.preco > 0 && isFinite(l.lph)).sort((a,b) => b[1].lph - a[1].lph)[0];
+  const tags = [];
+  if(p.tipo === 'kit') tags.push('<span class="tag">Kit</span>');
+  if(p.categoria) tags.push(`<span class="tag">${esc(p.categoria)}</span>`);
+  if(p.ativo === false) tags.push('<span class="tag">Inativo</span>');
+  if(p.licenca_comercial === 'nao') tags.push('<span class="tag bad">Licença não permite venda</span>');
+  if(p.licenca_comercial === 'nao_sei') tags.push('<span class="tag bad">Licença não verificada</span>');
+  return `<div class="pcard" onclick="A.editarProduto('${p.id}')">
+    <div class="t"><div style="min-width:0"><div class="nm">${esc(p.nome)}</div><div class="meta">${esc(p.sku)} · estoque ${qtdEstoque(p)}${cu.horas ? ' · ' + hm(cu.horas) : ''}${cu.gramas ? ' · ' + N(cu.gramas,0) + ' g' : ''}</div></div>
+    <div style="text-align:right;flex:none"><div class="sm mut">custo</div><b>${R(cu.total)}</b></div></div>
+    ${tags.length ? '<div style="margin-top:8px">' + tags.join('') + '</div>' : ''}
+    <div class="ch4">${lucros.map(([c,l]) => `<div><span class="mut">${CANAL_CURTO[c]}</span><b>${l.preco > 0 ? R(l.preco) : '—'}</b><span class="${l.preco > 0 ? cls(l.lucro) : 'mut'}">${l.preco > 0 ? R(l.lucro) : ''}</span></div>`).join('')}</div>
+    ${melhor ? `<div class="sm mut" style="margin-top:8px">Melhor lucro por hora: <b class="${cls(melhor[1].lph)}">${R(melhor[1].lph)}/h</b> (${CANAL_CURTO[melhor[0]]})</div>` : ''}
+  </div>`;
+}
+
+function formProduto(p){
+  const kit = p.tipo === 'kit';
+  const cats = [...new Set(['Bichinho','Deck box','Expositor TCG','Chaveiro','Caixa/kit', ...S.produtos.map(x => x.categoria).filter(Boolean)])];
+  const opsFil = '<option value="">— nenhum —</option>' + S.filamentos.map(f => `<option value="${f.id}" ${p.filamento_id===f.id?'selected':''}>${esc(f.material)} ${esc(f.cor)} ${esc(f.marca)} (${N(f.gramas_restantes,0)} g)</option>`).join('');
+  const modoMesa = p.modo_tempo === 'mesa';
+  const hU = num(p.horas), hMesa = num(p.horas_mesa);
+  let h = `<div id="fprod" oninput="A.prevProduto()" onchange="A.prevProduto()">
+  <label>Nome *</label><input id="f_nome" value="${esc(p.nome)}" placeholder="Ex.: Deck box magnética">
+  <div class="f2"><div><label>Código (SKU)</label><input id="f_sku" value="${esc(p.sku)}" placeholder="Automático"></div>
+  <div><label>Categoria</label><input id="f_cat" list="dl_cat" value="${esc(p.categoria)}"><datalist id="dl_cat">${cats.map(c => `<option value="${esc(c)}">`).join('')}</datalist></div></div>`;
+
+  if(!kit){
+    h += `<div class="sec-t">Impressão</div>
+    <label>Gramas de filamento por unidade</label><input id="f_gramas" inputmode="decimal" value="${vIn(p.gramas)}" placeholder="Do Bambu Studio, já com purga">
+    <label>Tempo de impressão</label>
+    <div class="seg"><button type="button" id="seg_un" class="${modoMesa?'':'on'}" onclick="A.modoTempo('unidade')">Por unidade</button><button type="button" id="seg_mesa" class="${modoMesa?'on':''}" onclick="A.modoTempo('mesa')">Mesa cheia</button></div>
+    <div id="t_un" style="display:${modoMesa?'none':'block'}"><div class="f2"><div><label>Horas</label><input id="f_h" inputmode="numeric" value="${modoMesa?'':Math.floor(hU)||''}"></div><div><label>Minutos</label><input id="f_m" inputmode="numeric" value="${modoMesa?'':Math.round((hU%1)*60)||''}"></div></div></div>
+    <div id="t_mesa" style="display:${modoMesa?'block':'none'}"><div class="f3"><div><label>Horas mesa</label><input id="f_hm" inputmode="numeric" value="${modoMesa?Math.floor(hMesa)||'':''}"></div><div><label>Minutos</label><input id="f_mm" inputmode="numeric" value="${modoMesa?Math.round((hMesa%1)*60)||'':''}"></div><div><label>Unid./mesa</label><input id="f_upm" inputmode="numeric" value="${p.unidades_por_mesa||''}"></div></div><div class="hint">O app divide o tempo da mesa pelo número de unidades. Gramas acima continuam por unidade.</div></div>
+    <label>Filamento usado (opcional)</label><select id="f_fil">${opsFil}</select>
+    <div class="hint">Ligar ao rolo faz a produção descontar os gramas automaticamente.</div>`;
+  } else {
+    const opsP = id => S.produtos.filter(x => x.tipo !== 'kit' && x.id !== p.id).map(x => `<option value="${x.id}" ${x.id===id?'selected':''}>${esc(x.nome)}</option>`).join('');
+    h += `<div class="sec-t">Composição do kit</div>
+    <div class="hint">Peças impressas (do seu cadastro) e quantidade de cada.</div>
+    <div id="kcomps">${(p.componentes || []).map(k => `<div class="item-row" style="grid-template-columns:1fr 70px 36px"><select class="k-p">${opsP(k.produto_id)}</select><input class="k-q" inputmode="numeric" value="${k.qtd}"><button type="button" class="xbtn" onclick="this.parentNode.remove();A.prevProduto()">✕</button></div>`).join('')}</div>
+    <button type="button" class="btn sec sm" style="margin-top:8px" onclick="A.addComp()">+ Peça</button>
+    <div class="hint" style="margin-top:14px">Itens comprados prontos (garrafa, bolsinha, caixa...).</div>
+    <div id="kitens">${(p.itens_comprados || []).map(i => `<div class="item-row" style="grid-template-columns:1fr 100px 36px"><input class="i-n" value="${esc(i.nome)}" placeholder="Item"><input class="i-c" inputmode="decimal" value="${vIn(i.custo)}" placeholder="R$"><button type="button" class="xbtn" onclick="this.parentNode.remove();A.prevProduto()">✕</button></div>`).join('')}</div>
+    <button type="button" class="btn sec sm" style="margin-top:8px" onclick="A.addItemComprado()">+ Item comprado</button>`;
+  }
+
+  h += `<div class="sec-t">Custos extras</div>
+  <div class="f2"><div><label>Extras por unidade (R$)</label><input id="f_extras" inputmode="decimal" value="${vIn(p.custos_extras)}" placeholder="Ímãs, cola..."></div>
+  <div><label>Embalagem (R$)</label><input id="f_emb" inputmode="decimal" value="${vIn(p.embalagem)}" placeholder="Padrão ${vIn(S.config.embalagem_padrao)}"></div></div>
+  <div class="sec-t">Preço de venda por canal</div>
+  ${CANAIS_PRECO.map(c => `<div class="f2"><div><label>${CANAIS[c]} (R$)</label><input id="f_p_${c}" inputmode="decimal" value="${vIn((p.precos||{})[c])}"></div><div><label>Frete pago por você</label><input id="f_fr_${c}" inputmode="decimal" value="${vIn((p.frete_vendedor||{})[c])}" placeholder="0"></div></div>`).join('')}
+  <div class="prev" id="prevProd"></div>
+  <div class="sec-t">Outros</div>
+  <label>Estoque mínimo (alerta)</label><input id="f_min" inputmode="numeric" value="${p.estoque_minimo||''}" placeholder="0">`;
+  if(!kit) h += `<div class="f2"><div><label>Origem do modelo</label><select id="f_origem">${Object.entries(ORIGENS).map(([k,n]) => `<option value="${k}" ${p.origem_modelo===k?'selected':''}>${n}</option>`).join('')}</select></div>
+  <div><label>Licença permite venda?</label><select id="f_lic">${Object.entries(LICENCAS).map(([k,n]) => `<option value="${k}" ${p.licenca_comercial===k?'selected':''}>${n}</option>`).join('')}</select></div></div>
+  <label>Link do modelo</label><input id="f_link" type="url" value="${esc(p.link_modelo)}" placeholder="https://">`;
+  h += `<label>Observações</label><textarea id="f_obs">${esc(p.obs)}</textarea>
+  <label class="chk"><input type="checkbox" id="f_ativo" ${p.ativo !== false ? 'checked' : ''}> Produto ativo</label>
+  ${p.id ? `<button type="button" class="btn sec" style="margin-top:20px;color:var(--bad)" onclick="A.excluirProduto('${p.id}')">Excluir produto</button>` : ''}
+  </div>`;
+  return h;
+}
+function lerProduto(){
+  const b = A._edit;
+  const p = Object.assign({}, b);
+  p.nome = val('f_nome').trim();
+  p.sku = val('f_sku').trim();
+  p.categoria = val('f_cat').trim();
+  p.custos_extras = num(val('f_extras'));
+  p.embalagem = val('f_emb').trim() === '' ? '' : num(val('f_emb'));
+  p.precos = {}; p.frete_vendedor = {};
+  CANAIS_PRECO.forEach(c => { p.precos[c] = num(val('f_p_'+c)); p.frete_vendedor[c] = num(val('f_fr_'+c)); });
+  p.estoque_minimo = Math.max(0, int(val('f_min')));
+  p.obs = val('f_obs').trim();
+  p.ativo = $('f_ativo').checked;
+  if(p.tipo === 'kit'){
+    p.componentes = [...document.querySelectorAll('#kcomps .item-row')].map(r => ({produto_id: r.querySelector('.k-p').value, qtd: Math.max(1, int(r.querySelector('.k-q').value) || 1)})).filter(k => k.produto_id);
+    p.itens_comprados = [...document.querySelectorAll('#kitens .item-row')].map(r => ({nome: r.querySelector('.i-n').value.trim(), custo: num(r.querySelector('.i-c').value)})).filter(i => i.nome || i.custo);
+    p.gramas = 0; p.horas = 0;
+  } else {
+    p.gramas = num(val('f_gramas'));
+    p.modo_tempo = $('seg_mesa').classList.contains('on') ? 'mesa' : 'unidade';
+    if(p.modo_tempo === 'mesa'){
+      p.horas_mesa = num(val('f_hm')) + num(val('f_mm'))/60;
+      p.unidades_por_mesa = Math.max(0, int(val('f_upm')));
+      p.horas = p.unidades_por_mesa > 0 ? p.horas_mesa / p.unidades_por_mesa : 0;
+    } else {
+      p.horas = num(val('f_h')) + num(val('f_m'))/60;
+      p.horas_mesa = 0; p.unidades_por_mesa = 0;
+    }
+    p.filamento_id = val('f_fil');
+    p.origem_modelo = val('f_origem');
+    p.link_modelo = val('f_link').trim();
+    p.licenca_comercial = val('f_lic');
+  }
+  return p;
+}
+function previewProduto(p){
+  const cu = custo(p);
+  let h = '<h3 style="margin:0 0 8px;font-size:15px">Custo real por unidade</h3><table class="tbl">';
+  if(cu.kit){
+    h += `<tr><td>Peças impressas</td><td>${R(cu.componentes)}</td></tr><tr><td>Itens comprados</td><td>${R(cu.comprados)}</td></tr>`;
+  } else {
+    h += `<tr><td>Material (${N(cu.gramas,0)} g × ${R(precoKg(p))}/kg)</td><td>${R(cu.material)}</td></tr>
+    <tr><td>Energia (${hm(cu.horas)})</td><td>${R(cu.energia)}</td></tr>
+    <tr><td>Máquina (depreciação)</td><td>${R(cu.maquina)}</td></tr>
+    <tr><td>Perda por falhas (${N(S.config.perda_falhas,0)}%)</td><td>${R(cu.perda)}</td></tr>`;
+  }
+  h += `<tr><td>Extras</td><td>${R(cu.extras)}</td></tr><tr><td>Embalagem</td><td>${R(cu.embalagem)}</td></tr>
+  <tr><td><b>Custo unitário</b></td><td><b>${R(cu.total)}</b></td></tr></table>`;
+  if(cu.kit) h += `<div class="hint">No kit, a embalagem individual das peças não entra; vale a embalagem do kit. Tempo total: ${hm(cu.horas)}.</div>`;
+  h += `<h3 style="margin:16px 0 8px;font-size:15px">Lucro por canal</h3><table class="tbl"><tr><th>Canal</th><th>Taxa+frete</th><th>Lucro</th><th>Margem</th><th>R$/h</th></tr>`;
+  CANAIS_PRECO.forEach(c => {
+    const l = lucroCanal(p, c, cu);
+    h += l.preco > 0 ? `<tr><td>${CANAL_CURTO[c]}</td><td>${R(l.taxa + l.frete)}</td><td class="${cls(l.lucro)}"><b>${R(l.lucro)}</b></td><td class="${cls(l.lucro)}">${P(l.margem)}</td><td>${isFinite(l.lph) ? R(l.lph) : '—'}</td></tr>`
+                     : `<tr><td>${CANAL_CURTO[c]}</td><td colspan="4" class="mut">sem preço</td></tr>`;
+  });
+  h += `</table>${S.config.ratear_cpa ? `<div class="hint">Inclui CPA rateado de ${R(cpaRecente())} por peça (últimos 30 dias).</div>` : ''}`;
+  h += `<h3 style="margin:16px 0 8px;font-size:15px">Preço mínimo para ${N(S.config.margem_alvo,0)}% de margem</h3><div class="ch4">` +
+    CANAIS_PRECO.map(c => { const l = lucroCanal(p, c, cu); return `<div><span class="mut">${CANAL_CURTO[c]}</span><b>${isFinite(l.minimo) ? R(l.minimo) : '—'}</b></div>`; }).join('') + '</div>';
+  return h;
+}
+
+/* ---------- ESTOQUE ---------- */
+VIEWS.estoque = function(){
+  const pecas = S.produtos.filter(p => p.tipo !== 'kit' && (p.ativo !== false || (S.estoque[p.id] || 0) !== 0));
+  const kits = S.produtos.filter(p => p.tipo === 'kit' && p.ativo !== false);
+  const valor = pecas.reduce((s,p) => s + Math.max(0, S.estoque[p.id] || 0) * custo(p).total, 0);
+  const unid = pecas.reduce((s,p) => s + Math.max(0, S.estoque[p.id] || 0), 0);
+  let h = `<div class="btns"><button class="btn" onclick="A.novaProducao()">Registrar produção</button><button class="btn sec" onclick="A.novoAjuste()">Ajuste manual</button></div>
+  <div class="grid2"><div class="kpi"><div class="l">Valor do estoque (custo)</div><div class="v">${R(valor)}</div></div><div class="kpi"><div class="l">Peças em estoque</div><div class="v">${unid}</div></div></div>
+  <div class="card"><h3>Peças</h3>`;
+  h += pecas.length ? pecas.map(p => {
+    const q = S.estoque[p.id] || 0, baixo = (p.estoque_minimo || 0) > 0 && q < p.estoque_minimo;
+    return `<div class="row"><span class="n">${esc(p.nome)}${p.estoque_minimo ? ` <span class="mut sm">· mín. ${p.estoque_minimo}</span>` : ''}</span><b class="${baixo || q < 0 ? 'neg' : ''}" style="font-size:18px">${q}</b></div>`;
+  }).join('') : '<div class="mut sm">Nenhuma peça cadastrada.</div>';
+  h += '</div>';
+  if(kits.length) h += `<div class="card"><h3>Kits (montáveis com o estoque atual)</h3>` + kits.map(k => `<div class="row"><span class="n">${esc(k.nome)}</span><b>${disponivelKit(k)}</b></div>`).join('') + '</div>';
+  const movs = S.movimentos.slice().sort((a,b) => (b.data + b.id).localeCompare(a.data + a.id));
+  const TIPOS = {producao:'Produção', venda:'Venda', ajuste:'Ajuste'};
+  h += `<div class="card"><h3>Movimentações</h3>` + (movs.length ? movs.slice(0, UI.movLimite).map(m =>
+    `<div class="row"><span class="n"><span class="sm mut">${dBR(m.data)} · ${TIPOS[m.tipo]}${m.motivo ? ' · ' + esc(m.motivo) : ''}${m.falhas ? ' · ' + m.falhas + ' falha(s)' : ''}</span><br>${esc(nomeProd(m.produto_id))}</span><span style="display:flex;align-items:center;gap:8px"><b class="${m.qtd >= 0 ? 'pos' : 'neg'}">${m.qtd > 0 ? '+' : ''}${m.qtd}</b>${m.tipo !== 'venda' ? `<button class="xbtn" style="width:36px;height:36px" onclick="A.excluirMov('${m.id}')">✕</button>` : ''}</span></div>`).join('')
+    + (movs.length > UI.movLimite ? `<button class="btn sec sm" style="margin-top:10px" onclick="UI.movLimite+=50;render()">Ver mais</button>` : '')
+    : '<div class="mut sm">Nenhuma movimentação ainda.</div>') + '</div>';
+  return h;
+};
+
+/* ---------- VENDAS ---------- */
+VIEWS.vendas = function(){
+  const p = periodo();
+  const vs = S.vendas.filter(v => noPer(v, p) && (!UI.canalVendas || v.canal === UI.canalVendas)).sort((a,b) => (b.data + b.id).localeCompare(a.data + a.id));
+  const fat = vs.reduce((s,v) => s + faturamentoVenda(v), 0), lucro = vs.reduce((s,v) => s + v.lucro, 0);
+  let h = `<button class="btn" style="margin-bottom:12px" onclick="A.novaVenda()">+ Registrar venda</button>` + perHTML();
+  h += '<div class="chips">' + [['','Todos'], ...Object.entries(CANAIS)].map(([k,n]) => `<button class="chip ${UI.canalVendas===k?'on':''}" onclick="UI.canalVendas='${k}';render()">${n}</button>`).join('') + '</div>';
+  h += `<div class="grid2"><div class="kpi"><div class="l">Faturamento (${vs.length})</div><div class="v">${R(fat)}</div></div><div class="kpi"><div class="l">Lucro das vendas</div><div class="v ${cls(lucro)}">${R(lucro)}</div><div class="s">sem descontar anúncios</div></div></div>`;
+  h += vs.length ? vs.map(v => `<div class="pcard" onclick="A.verVenda('${v.id}')"><div class="t"><div style="min-width:0"><div class="nm"><span class="sw" style="background:${CANAL_COR[v.canal]}"></span>${CANAIS[v.canal]}</div><div class="meta">${dBR(v.data)}${v.pedido ? ' · #' + esc(v.pedido) : ''}${v.cliente ? ' · ' + esc(v.cliente) : ''}</div><div class="sm" style="margin-top:4px">${v.itens.map(i => i.qtd + '× ' + esc(nomeProd(i.produto_id))).join(', ')}</div></div><div style="text-align:right;flex:none"><b>${R(faturamentoVenda(v))}</b><div class="sm ${cls(v.lucro)}">${R(v.lucro)}</div></div></div></div>`).join('')
+    : '<div class="empty">Nenhuma venda neste filtro.</div>';
+  return h;
+};
+function linhaItem(it){
+  const ops = S.produtos.filter(p => p.ativo !== false || (it && p.id === it.produto_id)).map(p => `<option value="${p.id}" ${it && it.produto_id===p.id?'selected':''}>${esc(p.nome)}${p.tipo==='kit'?' (kit)':''}</option>`).join('');
+  return `<div class="item-row"><select class="it-p" onchange="A.vItemProd(this)"><option value="">Produto</option>${ops}</select><input class="it-q" inputmode="numeric" value="${it ? it.qtd : 1}" oninput="A.vCalc()"><input class="it-pr" inputmode="decimal" value="${it ? vIn(it.preco_unit) : ''}" placeholder="R$" oninput="A.vCalc()"><button type="button" class="xbtn" onclick="this.parentNode.remove();A.vCalc()">✕</button></div>`;
+}
+function lerVenda(){
+  const canal = val('v_canal');
+  const itens = [...document.querySelectorAll('#vitens .item-row')].map(r => ({
+    produto_id: r.querySelector('.it-p').value, qtd: Math.max(0, int(r.querySelector('.it-q').value)), preco_unit: num(r.querySelector('.it-pr').value)
+  })).filter(i => i.produto_id && i.qtd > 0);
+  const bruto = itens.reduce((s,i) => s + i.qtd*i.preco_unit, 0);
+  const desconto = num(val('v_desc')), frete = num(val('v_frete'));
+  const t = S.config.taxas[canal] || {pct:0, fixo:0};
+  const pecas = itens.reduce((s,i) => s + i.qtd, 0);
+  const taxaAuto = Math.max(0, bruto - desconto) * t.pct/100 + t.fixo * pecas;
+  return {canal, itens, bruto, desconto, frete, taxaAuto, data: val('v_data') || hoje(), pedido: val('v_ped').trim(), cliente: val('v_cli').trim()};
+}
+
+/* ---------- MAIS ---------- */
+VIEWS.mais = function(){
+  return `<div class="card menu">
+    <div class="row" onclick="A.sub('anuncios')"><span class="n">Anúncios</span></div>
+    <div class="row" onclick="A.sub('filamentos')"><span class="n">Filamentos</span></div>
+    <div class="row" onclick="A.sub('config')"><span class="n">Configurações</span></div>
+    <div class="row" onclick="A.sub('backup')"><span class="n">Exportar / Importar</span></div>
+  </div>
+  <div class="hint" style="text-align:center">Gestão 3D · versão 1.0<br>Os dados ficam salvos só neste aparelho. Faça backup com frequência.</div>`;
+};
+
+VIEWS.anuncios = function(){
+  const p = periodo();
+  const ads = S.anuncios.filter(a => noPer(a, p)).sort((a,b) => (b.data + b.id).localeCompare(a.data + a.id));
+  const vendas = S.vendas.filter(v => noPer(v, p));
+  const gasto = ads.reduce((s,a) => s + a.valor, 0);
+  const atrib = ads.reduce((s,a) => s + (a.vendas_atribuidas || 0), 0);
+  const nV = atrib > 0 ? atrib : vendas.length;
+  const fat = vendas.reduce((s,v) => s + faturamentoVenda(v), 0);
+  let h = `<button class="btn" style="margin-bottom:12px" onclick="A.novoAnuncio()">+ Registrar gasto</button>` + perHTML();
+  h += `<div class="grid2"><div class="kpi"><div class="l">Gasto total</div><div class="v">${R(gasto)}</div></div>
+  <div class="kpi"><div class="l">CPA</div><div class="v">${gasto && nV ? R(gasto/nV) : '—'}</div><div class="s">${atrib > 0 ? 'por venda atribuída' : 'gasto ÷ todas as vendas'}</div></div>
+  <div class="kpi big"><div class="l">ROAS (faturamento ÷ gasto)</div><div class="v">${gasto ? N(fat/gasto) + 'x' : '—'}</div></div></div>`;
+  const porPlat = {};
+  ads.forEach(a => porPlat[a.plataforma] = (porPlat[a.plataforma] || 0) + a.valor);
+  if(Object.keys(porPlat).length) h += `<div class="card"><h3>Por plataforma</h3>` + Object.entries(porPlat).map(([k,v]) => `<div class="row"><span class="n">${esc(k)}</span><b>${R(v)}</b></div>`).join('') + '</div>';
+  h += `<div class="card"><h3>Lançamentos</h3>` + (ads.length ? ads.map(a => `<div class="row"><span class="n"><span class="sm mut">${dBR(a.data)} · ${esc(a.plataforma)}${a.vendas_atribuidas ? ' · ' + a.vendas_atribuidas + ' venda(s)' : ''}</span><br>${esc(a.campanha) || '<span class="mut">sem campanha</span>'}</span><span style="display:flex;align-items:center;gap:8px"><b>${R(a.valor)}</b><button class="xbtn" style="width:36px;height:36px" onclick="A.excluirAnuncio('${a.id}')">✕</button></span></div>`).join('') : '<div class="mut sm">Nenhum gasto no período.</div>') + '</div>';
+  return h;
+};
+
+VIEWS.filamentos = function(){
+  const lim = S.config.alerta_filamento_g;
+  let h = `<button class="btn" style="margin-bottom:12px" onclick="A.editarFilamento()">+ Cadastrar rolo</button>`;
+  const totalG = S.filamentos.reduce((s,f) => s + Math.max(0, f.gramas_restantes), 0);
+  const pagos = S.filamentos.filter(f => f.peso_inicial_g > 0 && f.preco_pago > 0);
+  const medio = pagos.length ? pagos.reduce((s,f) => s + f.preco_pago, 0) / pagos.reduce((s,f) => s + f.peso_inicial_g, 0) * 1000 : 0;
+  h += `<div class="grid2"><div class="kpi"><div class="l">Filamento disponível</div><div class="v">${N(totalG/1000,2)} kg</div></div><div class="kpi"><div class="l">Preço médio pago</div><div class="v">${medio ? R(medio) : '—'}</div><div class="s">por kg</div></div></div>`;
+  if(medio) h += `<button class="btn sec" style="margin-bottom:12px" onclick="A.usarPrecoMedio(${medio})">Usar ${R(medio)}/kg como preço padrão</button>`;
+  h += S.filamentos.length ? S.filamentos.map(f => {
+    const pct = f.peso_inicial_g > 0 ? Math.max(0, Math.min(100, f.gramas_restantes / f.peso_inicial_g * 100)) : 0;
+    const baixo = f.gramas_restantes < lim;
+    return `<div class="pcard" onclick="A.editarFilamento('${f.id}')"><div class="t"><div><div class="nm">${esc(f.material)} ${esc(f.cor)}</div><div class="meta">${esc(f.marca)}${f.data_compra ? ' · comprado em ' + dBR(f.data_compra) : ''}${f.preco_pago ? ' · ' + R(f.preco_pago) : ''}</div></div><div style="text-align:right"><b class="${baixo ? 'neg' : ''}">${N(f.gramas_restantes,0)} g</b><div class="sm mut">de ${N(f.peso_inicial_g,0)} g</div></div></div><div class="bar"><i style="width:${pct}%;background:${baixo ? 'var(--bad)' : 'var(--ac)'}"></i></div></div>`;
+  }).join('') : '<div class="empty">Nenhum rolo cadastrado.</div>';
+  return h;
+};
+
+VIEWS.config = function(){
+  const c = S.config;
+  const campo = (id, rot, v, dica='') => `<div><label>${rot}</label><input id="c_${id}" inputmode="decimal" value="${vIn(v)}">${dica ? `<div class="hint">${dica}</div>` : ''}</div>`;
+  return `<div class="card">
+  <div class="hint">Todos os valores são estimativas iniciais. Corrija com os seus valores reais.</div>
+  <div class="sec-t">Produção</div>
+  <div class="f2">${campo('preco_filamento_kg','Filamento (R$/kg)',c.preco_filamento_kg)}${campo('tarifa_kwh','Energia (R$/kWh)',c.tarifa_kwh)}</div>
+  <div class="f2">${campo('consumo_watts','Consumo médio (W)',c.consumo_watts)}${campo('perda_falhas','Perda por falhas (%)',c.perda_falhas)}</div>
+  <div class="f2">${campo('preco_impressora','Preço impressora (R$)',c.preco_impressora)}${campo('vida_util_horas','Vida útil (horas)',c.vida_util_horas)}</div>
+  <div class="hint">Depreciação atual: ${R(c.vida_util_horas > 0 ? c.preco_impressora/c.vida_util_horas : 0)} por hora.</div>
+  <div class="f2">${campo('num_impressoras','Nº de impressoras',c.num_impressoras)}${campo('embalagem_padrao','Embalagem padrão (R$)',c.embalagem_padrao)}</div>
+  <label class="chk"><input type="checkbox" id="c_usar_preco_rolo" ${c.usar_preco_rolo?'checked':''}> Usar o preço pago no rolo ligado ao produto (quando houver)</label>
+  <div class="sec-t">Taxas dos canais</div>
+  ${Object.keys(CANAIS).map(k => `<div class="f2"><div><label>${CANAIS[k]} (%)</label><input id="c_t_${k}_pct" inputmode="decimal" value="${vIn(c.taxas[k].pct)}"></div><div><label>+ R$ fixo por item</label><input id="c_t_${k}_fixo" inputmode="decimal" value="${vIn(c.taxas[k].fixo)}"></div></div>`).join('')}
+  <div class="sec-t">Análise</div>
+  <div class="f2">${campo('margem_alvo','Margem alvo (%)',c.margem_alvo,'Para o preço mínimo')}${campo('alerta_filamento_g','Alerta de rolo (g)',c.alerta_filamento_g)}</div>
+  <label class="chk"><input type="checkbox" id="c_ratear_cpa" ${c.ratear_cpa?'checked':''}> Ratear o custo de anúncios (CPA dos últimos 30 dias) no lucro de cada produto</label>
+  <button class="btn" style="margin-top:20px" onclick="A.salvarConfig()">Salvar configurações</button>
+  <button class="btn sec" style="margin-top:10px" onclick="A.restaurarConfig()">Voltar aos valores iniciais</button>
+  </div>`;
+};
+
+VIEWS.backup = function(){
+  const dias = S.ultimo_backup ? diasEntre(S.ultimo_backup, hoje()) - 1 : null;
+  return `<div class="card"><h3>Backup</h3>
+  <div style="margin-bottom:12px">Último backup: <b>${S.ultimo_backup ? dBR(S.ultimo_backup) : 'nunca'}</b>${dias !== null ? ` <span class="mut sm">(${dias === 0 ? 'hoje' : dias + ' dia' + (dias===1?'':'s') + ' atrás'})</span>` : ''}</div>
+  ${dias === null || dias > 7 ? '<div class="alert">Recomendado fazer backup pelo menos uma vez por semana.</div>' : ''}
+  <button class="btn" onclick="A.exportarJSON()">Exportar tudo (JSON)</button>
+  <div class="hint" style="margin-top:6px">O arquivo vai para Downloads. Guarde no Google Drive.</div>
+  <button class="btn sec" style="margin-top:14px" onclick="$('arqImport').click()">Importar backup (JSON)</button>
+  <div class="hint" style="margin-top:6px">Substitui os dados atuais pelos do arquivo, depois de confirmar.</div></div>
+  <div class="card"><h3>Planilhas (CSV)</h3>
+  <button class="btn sec" onclick="A.exportarCSV('vendas')">Exportar vendas</button>
+  <button class="btn sec" style="margin-top:10px" onclick="A.exportarCSV('produtos')">Exportar produtos</button>
+  <div class="hint" style="margin-top:6px">Abre no Google Planilhas (Arquivo › Importar).</div></div>
+  <div class="card"><h3>Resumo dos dados</h3>
+  <div class="sm mut">${S.produtos.length} produtos · ${S.vendas.length} vendas · ${S.movimentos.length} movimentações · ${S.anuncios.length} anúncios · ${S.filamentos.length} rolos</div>
+  <button class="btn sec" style="margin-top:14px;color:var(--bad)" onclick="A.apagarTudo()">Apagar todos os dados</button></div>`;
+};
+
+/* ===================== AÇÕES ===================== */
+const A = {
+  _cb:null, _edit:null, _taxaEd:false,
+  _ok(){
+    const cb = A._cb, m = $('modal'); A._cb = null;
+    m.classList.remove('on'); m.innerHTML = '';
+    A._reuso = true; try{ if(cb) cb(); } finally { A._reuso = false; }
+    if(!m.classList.contains('on')){ try{ if(history.state && history.state.m) history.back(); }catch(e){} }
+  },
+  fechar(dePop){
+    const m = $('modal');
+    if(!m.classList.contains('on')) return;
+    m.classList.remove('on'); m.innerHTML = '';
+    if(!dePop){ try{ if(history.state && history.state.m) history.back(); }catch(e){} }
+  },
+  tab(t){ UI.tab = t; UI.sub = null; window.scrollTo(0,0); render(); },
+  sub(s){ UI.tab = 'mais'; UI.sub = s; window.scrollTo(0,0); render(); },
+  voltar(){ UI.sub = null; render(); },
+  setPer(t){ UI.per.tipo = t; if(t === 'custom' && !UI.per.ini){ const p = periodo(); UI.per.ini = p.ini; UI.per.fim = p.fim; } render(); },
+  setPerData(k, v){ UI.per[k] = v; render(); },
+
+  /* produtos */
+  filtrarProdutos(){
+    const el = $('listaProd'); if(!el) return;
+    const q = UI.busca.trim().toLowerCase();
+    const lista = S.produtos.filter(p => (UI.inativos || p.ativo !== false) && (!q || [p.nome, p.sku, p.categoria].join(' ').toLowerCase().includes(q)))
+      .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    el.innerHTML = lista.length ? lista.map(cardProduto).join('') : `<div class="empty">${S.produtos.length ? 'Nada encontrado.' : 'Nenhum produto cadastrado ainda.'}</div>`;
+  },
+  novoProduto(tipo){
+    A._edit = {id:'', tipo, nome:'', sku:'', categoria:'', gramas:0, horas:0, modo_tempo:'unidade', horas_mesa:0, unidades_por_mesa:0,
+      filamento_id:'', custos_extras:0, embalagem:'', precos:{}, frete_vendedor:{}, estoque_minimo:0, origem_modelo:'proprio',
+      link_modelo:'', licenca_comercial:'sim', componentes:[], itens_comprados:[], ativo:true, obs:''};
+    A.abrirProduto(tipo === 'kit' ? 'Novo kit' : 'Nova peça');
+  },
+  editarProduto(id){ A._edit = clone(prod(id)); A.abrirProduto('Editar ' + (A._edit.tipo === 'kit' ? 'kit' : 'peça')); },
+  abrirProduto(titulo){
+    modal(titulo, formProduto(A._edit), `<button class="btn sec" onclick="A.fechar()">Cancelar</button><button class="btn" onclick="A.salvarProduto()">Salvar</button>`);
+    A.prevProduto();
+  },
+  modoTempo(m){
+    $('seg_un').classList.toggle('on', m === 'unidade'); $('seg_mesa').classList.toggle('on', m === 'mesa');
+    $('t_un').style.display = m === 'unidade' ? 'block' : 'none'; $('t_mesa').style.display = m === 'mesa' ? 'block' : 'none';
+    A.prevProduto();
+  },
+  addComp(){
+    const pecas = S.produtos.filter(x => x.tipo !== 'kit');
+    if(!pecas.length){ toast('Cadastre primeiro as peças impressas'); return; }
+    $('kcomps').insertAdjacentHTML('beforeend', `<div class="item-row" style="grid-template-columns:1fr 70px 36px"><select class="k-p">${pecas.map(x => `<option value="${x.id}">${esc(x.nome)}</option>`).join('')}</select><input class="k-q" inputmode="numeric" value="1"><button type="button" class="xbtn" onclick="this.parentNode.remove();A.prevProduto()">✕</button></div>`);
+    A.prevProduto();
+  },
+  addItemComprado(){
+    $('kitens').insertAdjacentHTML('beforeend', `<div class="item-row" style="grid-template-columns:1fr 100px 36px"><input class="i-n" placeholder="Item"><input class="i-c" inputmode="decimal" placeholder="R$"><button type="button" class="xbtn" onclick="this.parentNode.remove();A.prevProduto()">✕</button></div>`);
+  },
+  prevProduto(){ const el = $('prevProd'); if(el) el.innerHTML = previewProduto(lerProduto()); },
+  salvarProduto(){
+    const p = lerProduto();
+    if(!p.nome){ toast('Informe o nome do produto'); $('f_nome').focus(); return; }
+    if(p.tipo === 'kit' && !p.componentes.length && !p.itens_comprados.length){ toast('Adicione pelo menos uma peça ao kit'); return; }
+    if(!p.sku){
+      const base = (p.tipo === 'kit' ? 'K' : 'P');
+      let n = S.produtos.length + 1, sku;
+      do { sku = base + String(n++).padStart(4,'0'); } while(S.produtos.some(x => x.sku === sku));
+      p.sku = sku;
+    } else if(S.produtos.some(x => x.sku === p.sku && x.id !== p.id)){ toast('Já existe um produto com esse código'); return; }
+    if(!p.id){ p.id = uid(); p.criado_em = hoje(); S.produtos.push(p); if(p.tipo !== 'kit') S.estoque[p.id] = 0; }
+    else { const i = S.produtos.findIndex(x => x.id === p.id); S.produtos[i] = p; }
+    salvar(); A.fechar(); render(); toast('Produto salvo');
+  },
+  excluirProduto(id){
+    const p = prod(id);
+    const usado = S.vendas.some(v => v.itens.some(i => i.produto_id === id)) || S.produtos.some(k => (k.componentes || []).some(c => c.produto_id === id));
+    confirmar(`Excluir <b>${esc(p.nome)}</b>?` + (usado ? '<br><br><span class="mut sm">Este produto aparece em vendas ou kits. As vendas antigas continuam com o lucro gravado. Se preferir, desmarque "Produto ativo" em vez de excluir.</span>' : ''), () => {
+      S.produtos = S.produtos.filter(x => x.id !== id);
+      S.produtos.forEach(k => { if(k.componentes) k.componentes = k.componentes.filter(c => c.produto_id !== id); });
+      delete S.estoque[id];
+      salvar(); render(); toast('Produto excluído');
+    });
+  },
+
+  /* estoque */
+  novaProducao(){
+    const pecas = S.produtos.filter(p => p.tipo !== 'kit' && p.ativo !== false);
+    if(!pecas.length){ toast('Cadastre um produto primeiro'); return; }
+    modal('Registrar produção', `<div oninput="A.prevProducao()" onchange="A.prevProducao()">
+      <label>Produto</label><select id="pr_p">${pecas.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join('')}</select>
+      <div class="f2"><div><label>Quantidade boa</label><input id="pr_q" inputmode="numeric" placeholder="0"></div><div><label>Falharam</label><input id="pr_f" inputmode="numeric" placeholder="0"></div></div>
+      <label>Data</label><input id="pr_d" type="date" value="${hoje()}">
+      <div class="prev sm" id="prevPr"></div></div>`,
+      `<button class="btn sec" onclick="A.fechar()">Cancelar</button><button class="btn" onclick="A.salvarProducao()">Salvar</button>`);
+    A.prevProducao();
+  },
+  prevProducao(){
+    const p = prod(val('pr_p')); if(!p) return;
+    const q = Math.max(0, int(val('pr_q'))), f = Math.max(0, int(val('pr_f')));
+    const fil = S.filamentos.find(x => x.id === p.filamento_id);
+    const g = num(p.gramas) * (q + f);
+    $('prevPr').innerHTML = `Estoque atual: <b>${S.estoque[p.id] || 0}</b> → <b>${(S.estoque[p.id] || 0) + q}</b><br>Tempo de máquina: <b>${hm(num(p.horas) * (q + f))}</b><br>Filamento: <b>${N(g,0)} g</b> ${fil ? `descontados de ${esc(fil.material)} ${esc(fil.cor)} (restam ${N(fil.gramas_restantes - g,0)} g)` : '<span class="mut">(produto sem rolo ligado)</span>'}`;
+  },
+  salvarProducao(){
+    const p = prod(val('pr_p'));
+    const q = Math.max(0, int(val('pr_q'))), f = Math.max(0, int(val('pr_f')));
+    if(!p || (q + f) === 0){ toast('Informe a quantidade'); return; }
+    S.estoque[p.id] = (S.estoque[p.id] || 0) + q;
+    const fil = S.filamentos.find(x => x.id === p.filamento_id);
+    const g = num(p.gramas) * (q + f);
+    if(fil) fil.gramas_restantes = Math.round((fil.gramas_restantes - g) * 10) / 10;
+    S.movimentos.push({id:uid(), data:val('pr_d') || hoje(), produto_id:p.id, tipo:'producao', qtd:q, falhas:f, motivo:'', venda_id:'',
+      horas_total: num(p.horas) * (q + f), gramas_total: g, filamento_id: fil ? fil.id : ''});
+    salvar(); A.fechar(); render(); toast('Produção registrada');
+  },
+  novoAjuste(){
+    const pecas = S.produtos.filter(p => p.tipo !== 'kit');
+    if(!pecas.length){ toast('Cadastre um produto primeiro'); return; }
+    modal('Ajuste manual', `<label>Produto</label><select id="aj_p">${pecas.map(p => `<option value="${p.id}">${esc(p.nome)} (estoque ${S.estoque[p.id] || 0})</option>`).join('')}</select>
+      <label>Tipo</label><div class="seg"><button type="button" id="aj_s" class="on" onclick="this.classList.add('on');$('aj_e').classList.remove('on')">Saída (−)</button><button type="button" id="aj_e" onclick="this.classList.add('on');$('aj_s').classList.remove('on')">Entrada (+)</button></div>
+      <div class="f2"><div><label>Quantidade</label><input id="aj_q" inputmode="numeric" placeholder="0"></div><div><label>Data</label><input id="aj_d" type="date" value="${hoje()}"></div></div>
+      <label>Motivo</label><select id="aj_m">${MOTIVOS.map(m => `<option>${m}</option>`).join('')}</select>
+      <label>Detalhe (opcional)</label><input id="aj_t">`,
+      `<button class="btn sec" onclick="A.fechar()">Cancelar</button><button class="btn" onclick="A.salvarAjuste()">Salvar</button>`);
+  },
+  salvarAjuste(){
+    const id = val('aj_p'), q = Math.max(0, int(val('aj_q')));
+    if(!q){ toast('Informe a quantidade'); return; }
+    const sinal = $('aj_e').classList.contains('on') ? 1 : -1;
+    const motivo = val('aj_m') + (val('aj_t').trim() ? ' – ' + val('aj_t').trim() : '');
+    S.estoque[id] = (S.estoque[id] || 0) + sinal*q;
+    S.movimentos.push({id:uid(), data:val('aj_d') || hoje(), produto_id:id, tipo:'ajuste', qtd:sinal*q, falhas:0, motivo, venda_id:''});
+    salvar(); A.fechar(); render(); toast('Ajuste registrado');
+  },
+  excluirMov(id){
+    const m = S.movimentos.find(x => x.id === id); if(!m) return;
+    confirmar(`Desfazer esta movimentação (${m.qtd > 0 ? '+' : ''}${m.qtd} de ${esc(nomeProd(m.produto_id))})? O estoque${m.tipo === 'producao' && m.filamento_id ? ' e o filamento' : ''} voltam ao valor anterior.`, () => {
+      S.estoque[m.produto_id] = (S.estoque[m.produto_id] || 0) - m.qtd;
+      if(m.tipo === 'producao' && m.filamento_id){ const f = S.filamentos.find(x => x.id === m.filamento_id); if(f) f.gramas_restantes = Math.round((f.gramas_restantes + (m.gramas_total || 0)) * 10) / 10; }
+      S.movimentos = S.movimentos.filter(x => x.id !== id);
+      salvar(); render(); toast('Movimentação desfeita');
+    }, 'Desfazer');
+  },
+
+  /* vendas */
+  novaVenda(){
+    if(!S.produtos.some(p => p.ativo !== false)){ toast('Cadastre um produto primeiro'); return; }
+    A._taxaEd = false;
+    modal('Registrar venda', `<div class="f2"><div><label>Data</label><input id="v_data" type="date" value="${hoje()}"></div>
+      <div><label>Canal</label><select id="v_canal" onchange="A.vCanal()">${Object.entries(CANAIS).map(([k,n]) => `<option value="${k}">${n}</option>`).join('')}</select></div></div>
+      <label>Itens</label><div class="item-row hint" style="margin:0"><span>Produto</span><span>Qtd</span><span>Preço un.</span><span></span></div>
+      <div id="vitens">${linhaItem(null)}</div>
+      <button type="button" class="btn sec sm" style="margin-top:8px" onclick="$('vitens').insertAdjacentHTML('beforeend',linhaItem(null))">+ Produto</button>
+      <div class="f2"><div><label>Desconto / cupom (R$)</label><input id="v_desc" inputmode="decimal" placeholder="0" oninput="A.vCalc()"></div><div><label>Frete pago por você (R$)</label><input id="v_frete" inputmode="decimal" placeholder="0" oninput="A.vCalc()"></div></div>
+      <label>Taxa do canal (R$)</label><div style="display:flex;gap:8px"><input id="v_taxa" inputmode="decimal" oninput="A._taxaEd=true;A.vCalc()"><button type="button" class="btn sec sm" onclick="A._taxaEd=false;A.vCalc()">Recalcular</button></div>
+      <div class="hint">Calculada pela Configuração. Edite para bater com o relatório da plataforma.</div>
+      <div class="f2"><div><label>Nº do pedido</label><input id="v_ped"></div><div><label>Cliente</label><input id="v_cli"></div></div>
+      <div class="prev" id="prevV"></div>`,
+      `<button class="btn sec" onclick="A.fechar()">Cancelar</button><button class="btn" onclick="A.salvarVenda()">Salvar venda</button>`);
+    A.vCalc();
+  },
+  vItemProd(sel){
+    const p = prod(sel.value), row = sel.parentNode;
+    if(p) row.querySelector('.it-pr').value = vIn(precoCanal(p, val('v_canal')) || '');
+    A.vCalc();
+  },
+  vCanal(){
+    document.querySelectorAll('#vitens .item-row').forEach(r => { const p = prod(r.querySelector('.it-p').value); if(p) r.querySelector('.it-pr').value = vIn(precoCanal(p, val('v_canal')) || ''); });
+    A._taxaEd = false; A.vCalc();
+  },
+  vCalc(){
+    const v = lerVenda();
+    if(!A._taxaEd) $('v_taxa').value = vIn(Math.round(v.taxaAuto*100)/100);
+    const taxa = num(val('v_taxa'));
+    const custoT = v.itens.reduce((s,i) => s + custo(prod(i.produto_id)).total * i.qtd, 0);
+    const fat = v.bruto - v.desconto, lucro = fat - taxa - v.frete - custoT;
+    // checagem de estoque
+    const precisa = {};
+    v.itens.forEach(i => { const p = prod(i.produto_id); if(p.tipo === 'kit') (p.componentes||[]).forEach(k => precisa[k.produto_id] = (precisa[k.produto_id]||0) + k.qtd*i.qtd); else precisa[p.id] = (precisa[p.id]||0) + i.qtd; });
+    const faltas = Object.entries(precisa).filter(([id,q]) => (S.estoque[id] || 0) < q).map(([id]) => esc(nomeProd(id)));
+    $('prevV').innerHTML = `<table class="tbl"><tr><td>Faturamento</td><td>${R(fat)}</td></tr><tr><td>Taxa do canal</td><td>− ${R(taxa)}</td></tr><tr><td>Frete</td><td>− ${R(v.frete)}</td></tr><tr><td>Custo de produção</td><td>− ${R(custoT)}</td></tr><tr><td><b>Lucro da venda</b></td><td class="${cls(lucro)}"><b>${R(lucro)}</b></td></tr><tr><td>Margem</td><td class="${cls(lucro)}">${fat > 0 ? P(lucro/fat) : '—'}</td></tr></table>`
+      + (faltas.length ? `<div class="alert bad" style="margin:10px 0 0">Estoque insuficiente: ${faltas.join(', ')}. A venda pode ser salva, mas o estoque ficará negativo.</div>` : '');
+  },
+  salvarVenda(){
+    const v = lerVenda();
+    if(!v.itens.length){ toast('Adicione pelo menos um produto'); return; }
+    const taxa = num(val('v_taxa'));
+    const fat = v.bruto - v.desconto;
+    const venda = {id:uid(), data:v.data, canal:v.canal, itens:[], desconto:v.desconto, frete_vendedor:v.frete, taxa_canal:taxa, pedido:v.pedido, cliente:v.cliente, custo_total_no_momento:0, lucro:0};
+    const resto = fat - taxa - v.frete;
+    v.itens.forEach(i => {
+      const cu = custo(prod(i.produto_id)).total;
+      const parte = v.bruto > 0 ? (i.qtd*i.preco_unit) / v.bruto : 1 / v.itens.length;
+      const lucroItem = resto*parte - cu*i.qtd;
+      venda.itens.push({produto_id:i.produto_id, qtd:i.qtd, preco_unit:i.preco_unit, custo_unit:Math.round(cu*100)/100, lucro:Math.round(lucroItem*100)/100});
+      venda.custo_total_no_momento += cu*i.qtd;
+    });
+    venda.custo_total_no_momento = Math.round(venda.custo_total_no_momento*100)/100;
+    venda.lucro = Math.round((fat - taxa - v.frete - venda.custo_total_no_momento)*100)/100;
+    const baixar = (pid, q) => {
+      const p = prod(pid); if(!p) return;
+      if(p.tipo === 'kit') (p.componentes||[]).forEach(k => baixar(k.produto_id, k.qtd*q));
+      else { S.estoque[pid] = (S.estoque[pid] || 0) - q; S.movimentos.push({id:uid(), data:venda.data, produto_id:pid, tipo:'venda', qtd:-q, falhas:0, motivo:CANAL_CURTO[venda.canal], venda_id:venda.id}); }
+    };
+    venda.itens.forEach(i => baixar(i.produto_id, i.qtd));
+    S.vendas.push(venda);
+    salvar(); A.fechar(); render(); toast('Venda registrada · lucro ' + R(venda.lucro));
+  },
+  verVenda(id){
+    const v = S.vendas.find(x => x.id === id); if(!v) return;
+    const fat = faturamentoVenda(v);
+    modal('Venda', `<div style="margin:12px 0"><span class="sw" style="background:${CANAL_COR[v.canal]}"></span><b>${CANAIS[v.canal]}</b> · ${dBR(v.data)}${v.pedido ? '<br><span class="mut sm">Pedido #' + esc(v.pedido) + '</span>' : ''}${v.cliente ? '<br><span class="mut sm">Cliente: ' + esc(v.cliente) + '</span>' : ''}</div>
+      <table class="tbl"><tr><th>Item</th><th>Qtd</th><th>Preço</th><th>Lucro</th></tr>${v.itens.map(i => `<tr><td>${esc(nomeProd(i.produto_id))}</td><td>${i.qtd}</td><td>${R(i.preco_unit)}</td><td class="${cls(i.lucro)}">${R(i.lucro)}</td></tr>`).join('')}</table>
+      <table class="tbl" style="margin-top:12px">${v.desconto ? `<tr><td>Desconto</td><td>− ${R(v.desconto)}</td></tr>` : ''}<tr><td>Faturamento</td><td>${R(fat)}</td></tr><tr><td>Taxa do canal</td><td>− ${R(v.taxa_canal)}</td></tr><tr><td>Frete</td><td>− ${R(v.frete_vendedor)}</td></tr><tr><td>Custo (no dia da venda)</td><td>− ${R(v.custo_total_no_momento)}</td></tr><tr><td><b>Lucro</b></td><td class="${cls(v.lucro)}"><b>${R(v.lucro)}</b></td></tr></table>`,
+      `<button class="btn danger" onclick="A.excluirVenda('${v.id}')">Excluir</button><button class="btn sec" onclick="A.fechar()">Fechar</button>`);
+  },
+  excluirVenda(id){
+    confirmar('Excluir esta venda? O estoque dos produtos volta ao que era antes.', () => {
+      S.movimentos.filter(m => m.venda_id === id).forEach(m => S.estoque[m.produto_id] = (S.estoque[m.produto_id] || 0) - m.qtd);
+      S.movimentos = S.movimentos.filter(m => m.venda_id !== id);
+      S.vendas = S.vendas.filter(v => v.id !== id);
+      salvar(); render(); toast('Venda excluída');
+    });
+  },
+
+  /* anúncios */
+  novoAnuncio(){
+    modal('Gasto com anúncio', `<div class="f2"><div><label>Data</label><input id="ad_d" type="date" value="${hoje()}"></div><div><label>Plataforma</label><select id="ad_p">${PLATAFORMAS_ADS.map(p => `<option>${p}</option>`).join('')}</select></div></div>
+      <div class="f2"><div><label>Valor (R$)</label><input id="ad_v" inputmode="decimal"></div><div><label>Vendas atribuídas</label><input id="ad_n" inputmode="numeric" placeholder="opcional"></div></div>
+      <label>Campanha</label><input id="ad_c" placeholder="Ex.: Deck box – novembro">`,
+      `<button class="btn sec" onclick="A.fechar()">Cancelar</button><button class="btn" onclick="A.salvarAnuncio()">Salvar</button>`);
+  },
+  salvarAnuncio(){
+    const v = num(val('ad_v'));
+    if(v <= 0){ toast('Informe o valor'); return; }
+    S.anuncios.push({id:uid(), data:val('ad_d') || hoje(), plataforma:val('ad_p'), valor:v, campanha:val('ad_c').trim(), vendas_atribuidas:Math.max(0, int(val('ad_n')))});
+    salvar(); A.fechar(); render(); toast('Gasto registrado');
+  },
+  excluirAnuncio(id){ confirmar('Excluir este gasto com anúncio?', () => { S.anuncios = S.anuncios.filter(a => a.id !== id); salvar(); render(); }); },
+
+  /* filamentos */
+  editarFilamento(id){
+    const f = id ? S.filamentos.find(x => x.id === id) : {material:'PLA', cor:'', marca:'', peso_inicial_g:1000, gramas_restantes:1000, preco_pago:'', data_compra:hoje()};
+    const mats = ['PLA','PLA Matte','PLA Silk','PLA Basic','PETG','TPU','ABS','ASA'];
+    modal(id ? 'Editar rolo' : 'Novo rolo', `<div class="f2"><div><label>Material</label><input id="fi_m" list="dl_mat" value="${esc(f.material)}"><datalist id="dl_mat">${mats.map(m => `<option value="${m}">`).join('')}</datalist></div><div><label>Cor</label><input id="fi_c" value="${esc(f.cor)}"></div></div>
+      <div class="f2"><div><label>Marca</label><input id="fi_b" value="${esc(f.marca)}"></div><div><label>Data da compra</label><input id="fi_d" type="date" value="${f.data_compra || ''}"></div></div>
+      <div class="f2"><div><label>Peso inicial (g)</label><input id="fi_pi" inputmode="decimal" value="${vIn(f.peso_inicial_g)}"></div><div><label>Preço pago (R$)</label><input id="fi_pp" inputmode="decimal" value="${vIn(f.preco_pago)}"></div></div>
+      <label>Gramas restantes</label><input id="fi_r" inputmode="decimal" value="${vIn(f.gramas_restantes)}">
+      <div class="hint">Desconta sozinho a cada produção de produto ligado a este rolo. Corrija aqui se pesar o rolo.</div>
+      ${id ? `<button type="button" class="btn sec" style="margin-top:20px;color:var(--bad)" onclick="A.excluirFilamento('${id}')">Excluir rolo</button>` : ''}`,
+      `<button class="btn sec" onclick="A.fechar()">Cancelar</button><button class="btn" onclick="A.salvarFilamento('${id || ''}')">Salvar</button>`);
+  },
+  salvarFilamento(id){
+    const d = {material:val('fi_m').trim() || 'PLA', cor:val('fi_c').trim(), marca:val('fi_b').trim(), data_compra:val('fi_d'),
+      peso_inicial_g:num(val('fi_pi')), preco_pago:num(val('fi_pp')), gramas_restantes:num(val('fi_r'))};
+    if(id) Object.assign(S.filamentos.find(x => x.id === id), d); else S.filamentos.push(Object.assign({id:uid()}, d));
+    salvar(); A.fechar(); render(); toast('Rolo salvo');
+  },
+  excluirFilamento(id){
+    confirmar('Excluir este rolo? Produtos ligados a ele ficam sem rolo.', () => {
+      S.filamentos = S.filamentos.filter(f => f.id !== id);
+      S.produtos.forEach(p => { if(p.filamento_id === id) p.filamento_id = ''; });
+      salvar(); render();
+    });
+  },
+  usarPrecoMedio(v){
+    confirmar(`Usar ${R(v)} por kg como preço padrão do filamento? Vendas antigas não mudam.`, () => { S.config.preco_filamento_kg = Math.round(v*100)/100; salvar(); render(); toast('Preço atualizado'); }, 'Usar', '');
+  },
+
+  /* config */
+  salvarConfig(){
+    const c = S.config;
+    ['preco_filamento_kg','tarifa_kwh','consumo_watts','preco_impressora','vida_util_horas','perda_falhas','embalagem_padrao','margem_alvo','alerta_filamento_g'].forEach(k => c[k] = Math.max(0, num(val('c_'+k))));
+    c.num_impressoras = Math.max(1, int(val('c_num_impressoras')) || 1);
+    Object.keys(CANAIS).forEach(k => c.taxas[k] = {pct:Math.max(0, num(val('c_t_'+k+'_pct'))), fixo:Math.max(0, num(val('c_t_'+k+'_fixo')))});
+    c.usar_preco_rolo = $('c_usar_preco_rolo').checked;
+    c.ratear_cpa = $('c_ratear_cpa').checked;
+    salvar(); render(); toast('Configurações salvas');
+  },
+  restaurarConfig(){ confirmar('Voltar todas as configurações para os valores iniciais?', () => { S.config = clone(DEF_CFG); salvar(); render(); toast('Valores iniciais restaurados'); }, 'Restaurar'); },
+
+  /* backup */
+  baixarArquivo(nome, conteudo, tipo){
+    const b = new Blob([conteudo], {type:tipo}), u = URL.createObjectURL(b), a = document.createElement('a');
+    a.href = u; a.download = nome; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(u); a.remove(); }, 1500);
+  },
+  exportarJSON(){
+    S.ultimo_backup = hoje(); salvar();
+    A.baixarArquivo(`gestao3d-backup-${hoje()}.json`, JSON.stringify(S, null, 1), 'application/json');
+    render(); toast('Backup exportado');
+  },
+  importarArquivo(inp){
+    const f = inp.files && inp.files[0]; inp.value = '';
+    if(!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      let d;
+      try{ d = JSON.parse(r.result); }catch(e){ toast('Arquivo inválido'); return; }
+      if(!d || typeof d !== 'object' || !('versao_schema' in d) || !Array.isArray(d.produtos)){ toast('Este arquivo não é um backup do Gestão 3D'); return; }
+      const n = k => Array.isArray(d[k]) ? d[k].length : 0;
+      confirmar(`Importar este backup?<br><br><span class="sm">${n('produtos')} produtos · ${n('vendas')} vendas · ${n('movimentos')} movimentações · ${n('anuncios')} anúncios · ${n('filamentos')} rolos${d.ultimo_backup ? '<br>Backup de ' + dBR(d.ultimo_backup) : ''}</span><br><br><b>Os dados atuais deste aparelho serão substituídos.</b>`, () => {
+        S = migrar(d); salvar(); render(); toast('Backup importado');
+      }, 'Importar', '');
+    };
+    r.readAsText(f);
+  },
+  exportarCSV(tipo){
+    const n2 = v => (Math.round((v||0)*100)/100).toFixed(2).replace('.', ',');
+    const c = s => '"' + String(s ?? '').replace(/"/g, '""') + '"';
+    let linhas;
+    if(tipo === 'vendas'){
+      linhas = [['Data','Canal','Pedido','Cliente','Produto','Qtd','Preço unit.','Custo unit.','Lucro item','Desconto venda','Frete venda','Taxa venda','Faturamento venda','Lucro venda']];
+      S.vendas.slice().sort((a,b) => a.data.localeCompare(b.data)).forEach(v => v.itens.forEach((i,k) => linhas.push([dBR(v.data), CANAIS[v.canal], v.pedido, v.cliente, nomeProd(i.produto_id), i.qtd, n2(i.preco_unit), n2(i.custo_unit), n2(i.lucro),
+        k ? '' : n2(v.desconto), k ? '' : n2(v.frete_vendedor), k ? '' : n2(v.taxa_canal), k ? '' : n2(faturamentoVenda(v)), k ? '' : n2(v.lucro)])));
+    } else {
+      linhas = [['Código','Nome','Tipo','Categoria','Gramas','Horas','Custo unit.', ...CANAIS_PRECO.flatMap(k => ['Preço ' + CANAIS[k], 'Lucro ' + CANAIS[k]]), 'Estoque','Estoque mín.','Licença','Ativo']];
+      S.produtos.forEach(p => { const cu = custo(p); linhas.push([p.sku, p.nome, p.tipo === 'kit' ? 'Kit' : 'Peça', p.categoria, n2(cu.gramas), n2(cu.horas), n2(cu.total),
+        ...CANAIS_PRECO.flatMap(k => { const l = lucroCanal(p, k, cu); return [n2(l.preco), l.preco > 0 ? n2(l.lucro) : '']; }), qtdEstoque(p), p.estoque_minimo || 0, LICENCAS[p.licenca_comercial] || '', p.ativo !== false ? 'Sim' : 'Não']); });
+    }
+    A.baixarArquivo(`gestao3d-${tipo}-${hoje()}.csv`, '﻿' + linhas.map(l => l.map(c).join(';')).join('\r\n'), 'text/csv;charset=utf-8');
+    toast('CSV exportado');
+  },
+  apagarTudo(){
+    confirmar('Apagar <b>todos</b> os dados deste aparelho? Isso não pode ser desfeito. Faça um backup antes.', () => {
+      confirmar('Tem certeza mesmo? Produtos, vendas, estoque e configurações serão apagados.', () => { S = novoEstado(); salvar(); A.tab('painel'); toast('Dados apagados'); }, 'Apagar tudo');
+    }, 'Continuar');
+  }
+};
+
+/* ===================== INÍCIO ===================== */
+carregar();
+render();
+if('serviceWorker' in navigator && location.protocol === 'https:'){
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+</script>
+</body>
+</html>
